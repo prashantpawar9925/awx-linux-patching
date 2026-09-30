@@ -1,0 +1,49 @@
+---
+- name: Ubuntu Pre-Patch Checks
+  hosts: Linux-Servers
+  become: true
+  gather_facts: true
+
+  tasks:
+
+    - name: Test connectivity
+      ansible.builtin.ping:
+
+    - name: Get hostname
+      ansible.builtin.command: hostname
+      register: hostname_result
+      changed_when: false
+
+    - name: Check Ubuntu version
+      ansible.builtin.command: lsb_release -ds
+      register: ubuntu_version
+      changed_when: false
+
+    - name: Check root filesystem
+      ansible.builtin.command: df -h /
+      register: disk_result
+      changed_when: false
+
+    - name: Check uptime
+      ansible.builtin.command: uptime
+      register: uptime_result
+      changed_when: false
+
+    - name: Check if reboot is already required
+      ansible.builtin.stat:
+        path: /var/run/reboot-required
+      register: reboot_required
+
+    - name: Display pre-check results
+      ansible.builtin.debug:
+        msg:
+          - "Hostname: {{ hostname_result.stdout }}"
+          - "Ubuntu: {{ ubuntu_version.stdout }}"
+          - "Disk: {{ disk_result.stdout }}"
+          - "Uptime: {{ uptime_result.stdout }}"
+          - "Reboot required: {{ reboot_required.stat.exists }}"
+
+    - name: Stop if reboot is already pending
+      ansible.builtin.fail:
+        msg: "Server already has a pending reboot. Resolve this before patching."
+      when: reboot_required.stat.exists
