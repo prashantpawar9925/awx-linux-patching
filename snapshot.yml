@@ -13,8 +13,6 @@
         wait: true
       register: snapshot_result
 
-    - name: Display snapshot information
+    - name: Display snapshot result
       ansible.builtin.debug:
-        msg:
-          - "Snapshot ID: {{ snapshot_result.snapshot_id }}"
-          - "Snapshot state: {{ snapshot_result.snapshot.state }}"
+        var: snapshot_result
