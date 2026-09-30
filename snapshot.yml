@@ -1,0 +1,20 @@
+---
+- name: Create Ubuntu EBS Snapshot
+  hosts: localhost
+  gather_facts: false
+
+  tasks:
+
+    - name: Create EBS snapshot
+      amazon.aws.ec2_snapshot:
+        volume_id: "{{ vol-02260769fa8b5a42d }}"
+        region: ap-south-1
+        description: "Pre-patch snapshot - {{ vol-02260769fa8b5a42d }}"
+        wait: true
+      register: snapshot_result
+
+    - name: Display snapshot information
+      ansible.builtin.debug:
+        msg:
+          - "Snapshot ID: {{ snapshot_result.snapshot_id }}"
+          - "Snapshot state: {{ snapshot_result.snapshot.state }}"
