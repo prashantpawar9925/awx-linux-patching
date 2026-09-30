@@ -1,6 +1,6 @@
 ---
 - name: Ubuntu Pre-Patch Checks
-  hosts: Linux-Servers
+  hosts: Ubuntu-Server
   become: true
   gather_facts: true
 
