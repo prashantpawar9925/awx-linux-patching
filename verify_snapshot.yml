@@ -1,0 +1,29 @@
+---
+- name: Verify Ubuntu EBS Snapshot
+  hosts: localhost
+  gather_facts: false
+
+  tasks:
+
+    - name: Check snapshot status
+      amazon.aws.ec2_snapshot_info:
+        snapshot_ids:
+          - "snap-0aceeea1a0444c5eb"
+        region: ap-south-1
+      register: snapshot_info
+
+    - name: Display snapshot status
+      ansible.builtin.debug:
+        msg:
+          - "Snapshot ID: {{ snapshot_info.snapshots[0].snapshot_id }}"
+          - "Snapshot State: {{ snapshot_info.snapshots[0].state }}"
+          - "Snapshot Progress: {{ snapshot_info.snapshots[0].progress }}"
+
+    - name: Fail if snapshot is not completed
+      ansible.builtin.fail:
+        msg: "Snapshot verification failed. Snapshot is not completed."
+      when: snapshot_info.snapshots[0].state != "completed"
+
+    - name: Confirm snapshot is completed
+      ansible.builtin.debug:
+        msg: "Snapshot verification successful. Snapshot is completed."
