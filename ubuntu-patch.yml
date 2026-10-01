@@ -1,0 +1,36 @@
+---
+- name: Patch Ubuntu Server
+  hosts: Ubuntu-Server
+  become: true
+  gather_facts: true
+
+  tasks:
+
+    - name: Update APT cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Upgrade installed packages
+      ansible.builtin.apt:
+        upgrade: dist
+        state: present
+      register: patch_result
+
+    - name: Check if reboot is required
+      ansible.builtin.stat:
+        path: /var/run/reboot-required
+      register: reboot_required
+
+    - name: Display patch result
+      ansible.builtin.debug:
+        msg:
+          - "Packages changed: {{ patch_result.changed }}"
+          - "Reboot required: {{ reboot_required.stat.exists }}"
+
+    - name: Reboot Ubuntu server if required
+      ansible.builtin.reboot:
+        reboot_timeout: 1800
+        connect_timeout: 10
+        test_command: uptime
+      when: reboot_required.stat.exists
