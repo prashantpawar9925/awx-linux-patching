@@ -1,0 +1,66 @@
+---
+- name: Ubuntu Post-Patch Validation
+  hosts: Ubuntu-Server
+  become: true
+  gather_facts: true
+
+  tasks:
+
+    - name: Test connectivity
+      ansible.builtin.ping:
+
+    - name: Get hostname
+      ansible.builtin.command: hostname
+      register: hostname_result
+      changed_when: false
+
+    - name: Check Ubuntu version
+      ansible.builtin.command: lsb_release -ds
+      register: ubuntu_version
+      changed_when: false
+
+    - name: Check uptime
+      ansible.builtin.command: uptime
+      register: uptime_result
+      changed_when: false
+
+    - name: Check root filesystem
+      ansible.builtin.command: df -h /
+      register: disk_result
+      changed_when: false
+
+    - name: Check SSH service
+      ansible.builtin.service:
+        name: ssh
+        state: started
+      check_mode: true
+      register: ssh_service
+
+    - name: Check if reboot is still required
+      ansible.builtin.stat:
+        path: /var/run/reboot-required
+      register: reboot_required
+
+    - name: Display post-check results
+      ansible.builtin.debug:
+        msg:
+          - "Hostname: {{ hostname_result.stdout }}"
+          - "Ubuntu Version: {{ ubuntu_version.stdout }}"
+          - "Uptime: {{ uptime_result.stdout }}"
+          - "Disk: {{ disk_result.stdout }}"
+          - "SSH Service: {{ ssh_service.state }}"
+          - "Reboot Required: {{ reboot_required.stat.exists }}"
+
+    - name: Fail if reboot is still required
+      ansible.builtin.fail:
+        msg: "Post-check failed: server still requires a reboot."
+      when: reboot_required.stat.exists
+
+    - name: Fail if SSH service is not running
+      ansible.builtin.fail:
+        msg: "Post-check failed: SSH service is not running."
+      when: ssh_service.state != "started"
+
+    - name: Post-check successful
+      ansible.builtin.debug:
+        msg: "Ubuntu post-patch validation completed successfully."
